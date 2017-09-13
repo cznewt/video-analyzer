@@ -1,0 +1,18 @@
+*.pyc
+*.pyo
+.ropeproject
+*.egg-info
+.pybuild
+dist/
+docs/build/
+build
+.cache
+#vimmy stuff
+*.swp
+*.swo
+*.vim
+*project/
+
+ctags.tmp
+
+.tox/*
