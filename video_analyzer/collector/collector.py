@@ -5,12 +5,18 @@ import time
 import urllib 
 import numpy as np
 
+from kafka import KafkaProducer
+
+# USER PROVIDED PARAMS 
 CAMERA_ID = 'cam-01'
 STREAM_URL = 'http://cfg.newt.cz:8888/?action=stream'
+KAFKA_BROKERS = '192.168.25.220:9092'
+IN_TOPIC_NAME = 'video-stream-in'
 
 
 stream = urllib.urlopen(STREAM_URL)
 bytes = ''
+
 while True:
     bytes += stream.read(1024)
     a = bytes.find('\xff\xd8')
@@ -28,8 +34,14 @@ while True:
           'data': base64.b64encode(jpg)
         }
 
-        with open('payload.json', 'w') as fh:
-            json.dump(payload, fh)
+        #with open('payload.json', 'w') as fh:
+        #    json.dump(payload, fh)
 
-        break
+        producer = KafkaProducer(
+            bootstrap_servers=KAFKA_BROKERS,
+            batch_size=512000,
+            api_version=(0, 10, 1))
+        producer.send(IN_TOPIC_NAME,
+            key=CAMERA_ID,
+            value=json.dumps(payload))
 

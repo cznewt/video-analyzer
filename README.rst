@@ -15,3 +15,9 @@ Possible video stream analytics use-cases:
 * gesture recognition
 * augmented reality
 * vegetation indexing
+
+Required packages:
+
+* libsm6
+* libxrender1
+
