@@ -4,17 +4,24 @@ import json
 import time
 import urllib 
 import numpy as np
+import sys
 
 from kafka import KafkaProducer
 
 # USER PROVIDED PARAMS 
 CAMERA_ID = 'cam-01'
 STREAM_URL = 'http://cfg.newt.cz:8888/?action=stream'
-KAFKA_BROKERS = '192.168.25.220:9092'
+KAFKA_BROKERS = 'kafka-video-kafka-0.kafka-video-kafka.default.svc.atengler-deploy-heat-k8s-ha-calico-173.bud-mk.local:9092'
 IN_TOPIC_NAME = 'video-stream-in'
 
 
-stream = urllib.urlopen(STREAM_URL)
+try:
+    stream = urllib.urlopen(STREAM_URL)
+except Exception as e:
+    print "%s ERROR [%s] Connecting to video stream failed with following reason: %s" % (
+        time.strftime('%y/%m/%d %H:%M:%S'), CAMERA_ID, repr(e))
+    sys.exit(1)
+
 bytes = ''
 
 while True:
@@ -34,14 +41,22 @@ while True:
           'data': base64.b64encode(jpg)
         }
 
-        #with open('payload.json', 'w') as fh:
-        #    json.dump(payload, fh)
+        print "%s INFO [%s] Frame sent" % (time.strftime('%y/%m/%d %H:%M:%S'), CAMERA_ID)
 
-        producer = KafkaProducer(
-            bootstrap_servers=KAFKA_BROKERS,
-            batch_size=512000,
-            api_version=(0, 10, 1))
-        producer.send(IN_TOPIC_NAME,
-            key=CAMERA_ID,
-            value=json.dumps(payload))
+        try:
+            producer = KafkaProducer(
+                bootstrap_servers=KAFKA_BROKERS,
+                batch_size=512000,
+                api_version=(0, 10, 1))
+        except Exception as e:
+            print "%s ERROR [%s] Connecting to Kafka broker failed with following reason: %s" % (
+                time.strftime('%y/%m/%d %H:%M:%S'), CAMERA_ID, repr(e))
+        try:
+            producer.send(IN_TOPIC_NAME,
+                key=CAMERA_ID,
+                value=json.dumps(payload))
+            print "%s INFO [%s] Frame sent" % (time.strftime('%y/%m/%d %H:%M:%S'), CAMERA_ID)
+        except Exception as e:
+            print "%s ERROR [%s] Sending frame failed with following error: %s" % (
+                time.strftime('%y/%m/%d %H:%M:%S'), CAMERA_ID, repr(e))
 
